@@ -1,32 +1,23 @@
 import React, { Component } from "react";
 
-import StoreContext from "../contexts/storeContext";
-import { loadBugs } from "../store/bugs";
+import { connect } from "react-redux";
+import { loadBugs, resolveBug, getUnresolvedBugs } from "../store/bugs";
 
 class Bugs extends Component {
-  static contextType = StoreContext;
-  state = { bugs: [] };
-
   componentDidMount() {
-    const store = this.context;
-
-    this.unsubscribe = store.subscribe(() => {
-      const bugsInStore = store.getState().entities.bugs.list;
-      if (this.state.bugs !== bugsInStore) this.setState({ bugs: bugsInStore });
-    });
-
-    store.dispatch(loadBugs());
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
+    this.props.loadBugs();
   }
 
   render() {
     return (
       <ul>
-        {this.state.bugs.map((bug) => (
-          <li key={bug.id}>{bug.description}</li>
+        {this.props.bugs.map((bug) => (
+          <li key={bug.id}>
+            {bug.description}
+            <button onClick={() => this.props.resolveBug(bug.id)}>
+              Resolve
+            </button>
+          </li>
         ))}
       </ul>
     );
@@ -36,4 +27,17 @@ class Bugs extends Component {
 // One way to set context to class
 // Bugs.contextType = StoreContext;
 
-export default Bugs;
+const mapStateToProps = (state) => ({
+  // bugs: state.entities.bugs.list, // default
+  bugs: getUnresolvedBugs(state),
+});
+
+const mapDispatchToProps = (dispatch) => ({
+  loadBugs: () => dispatch(loadBugs()),
+  resolveBug: (id) => dispatch(resolveBug(id)),
+});
+
+// Container (presentation component)
+//   Presentation (Bugs)
+// arg1 => bugs: state.entities.bugs.list
+export default connect(mapStateToProps, mapDispatchToProps)(Bugs);
